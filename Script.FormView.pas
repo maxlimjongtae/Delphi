@@ -65,13 +65,10 @@ begin
   Memo2.Clear;
   Tokenize := TTokenize.Create;
   try
-    Tokenize.Value := Trim(S);
-//    Tokenize.Tokenize;
-//    Memo2.lines.Add(Tokenize.Print);
-
     Conformity := TConformity.Create;
     try
-      ShowMessage(Conformity.Execute(Tokenize.Tokenize));
+      Memo2.lines.Add(Conformity.Execute(Tokenize.Execute(S)));
+      Memo2.lines.Add(Tokenize.ToString);
     finally
       Conformity.Free;
     end;

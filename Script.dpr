@@ -8,7 +8,7 @@ uses
   Token in 'Token.pas',
   Conformity in 'Conformity.pas',
   Common in 'Common.pas',
-  Variable in 'Variable.pas';
+  VariableStorage in 'VariableStorage.pas';
 
 {$R *.res}
 
