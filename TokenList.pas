@@ -2,7 +2,8 @@ unit TokenList;
 
 interface
 
-uses Token;
+uses
+  Token, System.SysUtils;
 
 type
   TTokenList = class
@@ -16,7 +17,6 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Print: string;
     function Count: Integer;
     function CanNext: Boolean;
     function CurrentToken: TToken;
@@ -42,9 +42,7 @@ end;
 procedure TTokenList.Add(Value: string; TokenType: TTokenType);
 begin
   SetLength(FTokenList, Length(FTokenList) + 1);
-  FTokenList[High(FTokenList)] := TToken.Create;
-  FTokenList[High(FTokenList)].Value := Value;
-  FTokenList[High(FTokenList)].TokenType := TokenType;
+  FTokenList[High(FTokenList)] := TToken.Create(Value, TokenType);
 end;
 
 function TTokenList.CanNext: Boolean;
@@ -75,7 +73,10 @@ end;
 
 function TTokenList.CurrentToken: TToken;
 begin
-  Result := FTokenList[FIndex];
+  if FTokenList[FIndex] <> nil then
+    Result := FTokenList[FIndex]
+  else
+    raise Exception.Create('Token not found!');
 end;
 
 procedure TTokenList.Delete(Index: Integer);
@@ -109,12 +110,8 @@ end;
 
 procedure TTokenList.Next;
 begin
-  Inc(FIndex);
-end;
-
-function TTokenList.Print: string;
-begin
-
+  if CanNext then
+    Inc(FIndex);
 end;
 
 procedure TTokenList.SetItems(index: Integer; const Token: TToken);
