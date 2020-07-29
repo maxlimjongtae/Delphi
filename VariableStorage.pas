@@ -1,4 +1,4 @@
-unit Variable;
+unit VariableStorage;
 
 interface
 
@@ -9,18 +9,16 @@ type
   TVariableType = (None, Integer, &string);
   {$SCOPEDENUMS OFF}
 
-  TVariable = class
+  TVariableStorage = class
   private
-    FVariable: string; //name
     FValue: Variant;
     FVariableType: TVariableType;
   public
-    constructor Create(Variable: string; Value: Variant; VariableType: TVariableType);
+    constructor Create(Value: Variant; VariableType: TVariableType);
     destructor Destroy; override;
 
     function ToString: string;
 
-    property Variable: string read FVariable write FVariable;
     property Vaule: Variant read FValue write FValue;
     property VariableType: TVariableType read FVariableType write FVariableType;
   end;
@@ -39,22 +37,20 @@ end;
 
 { TVariable }
 
-constructor TVariable.Create(Variable: string; Value: Variant;
-  VariableType: TVariableType);
+constructor TVariableStorage.Create(Value: Variant; VariableType: TVariableType);
 begin
-  FVariable := Variable;
   FValue := Value;
   FVariableType := VariableType;
 end;
 
-destructor TVariable.Destroy;
+destructor TVariableStorage.Destroy;
 begin
   inherited;
 end;
 
-function TVariable.ToString: string;
+function TVariableStorage.ToString: string;
 begin
-  Result := '[Variable]: ' + FVariable +' [Value]: ' + VarToStr(FValue) + ' [VariableType]: ' + GetEnumName(Typeinfo(TVariableType),Ord(FVariableType)) ;
+  Result := '[Value]: ' + VarToStr(FValue) + ' [VariableType]: ' + GetEnumName(Typeinfo(TVariableType),Ord(FVariableType)) ;
 end;
 
 end.

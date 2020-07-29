@@ -4,14 +4,15 @@ interface
 
 uses
   System.RegularExpressions, System.SysUtils, System.Classes,
-  System.Generics.Collections, Token, TokenList, Variable;
+  System.Generics.Collections, Token, TokenList, VariableStorage;
 
 type
   TState = function: Boolean of object;
 
   TConformity = class
   private
-    FDictionary: TDictionary<string, TVariable>;
+    FVariable: TDictionary<string, TVariableStorage>;
+
     FCurrentState: TState;
     FTokenList: TTokenList;
 
@@ -24,7 +25,9 @@ type
     function FinalState: Boolean;
 
     function VariableSynTaxCheck(S: string): Boolean;
-    function ValueSynTaxCheck(V: Variant; VariableType: TVariableType): Boolean;
+    function ValueSyntaxCheck(S: string; VariableType: TVariableType): Boolean;
+
+    procedure Clear;
   public
     constructor Create;
     destructor Destroy; override;
@@ -48,8 +51,8 @@ begin
     FCurrentState;
   until FCurrentState = FinalState;
 
-  for S in FDictionary.Keys do
-    Result := Result + FDictionary.Items[S].ToString;
+  for S in FVariable.Keys do
+    Result := Result + FVariable.Items[S].ToString;
 end;
 
 function TConformity.BranchState: Boolean;
@@ -64,7 +67,8 @@ begin
     case WhatIsTokenType(FTokenList.CurrentToken.Value) of
       TTokenType.ReservedWord : FCurrentState := ReservedState;
       TTokenType.Variable : FCurrentState := VariableState;
-      TTokenType.Return : FTokenList.Next;
+      TTokenType.Return : FTokenList.Next
+      else {handling exceptions}
     end;
   end
   else FCurrentState := FinalState;
@@ -90,28 +94,30 @@ end;
 
 function TConformity.ReservedState: Boolean;
 var
-  S: string;
-  Variable: TVariable;
+  S, S2: string;
+  Variable: TVariableStorage;
 begin
   Result := False;
   S := '';
 
   FTokenList.Next;
 
-  if VariableSynTaxCheck(FTokenList.CurrentToken.Value) then
-    raise Exception.Create('Variable SynTax Error!');
+  S2 := FTokenList.CurrentToken.Value;
 
-  if FDictionary.ContainsKey(FTokenList.CurrentToken.Value) then
+  if not VariableSyntaxCheck(FTokenList.CurrentToken.Value) then
+    raise Exception.Create('Variable Syntax Error!');
+
+  if FVariable.ContainsKey(FTokenList.CurrentToken.Value) then
     raise Exception.Create('Duplicate Key');
 
-  Variable := TVariable.Create(FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Value, TVariableType.None);
-  FDictionary.Add(FTokenList.CurrentToken.Value , Variable);
+  Variable := TVariableStorage.Create('', TVariableType.None);
+  FVariable.Add(FTokenList.CurrentToken.Value , Variable);
   S:= FTokenList.CurrentToken.Value;
 
   FTokenList.Next;
 
   if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Colon then
-    raise Exception.Create('Error Message');
+    raise Exception.Create('Colon Not Found');
 
   FTokenList.Next;
 
@@ -119,7 +125,7 @@ begin
     raise Exception.Create('VariableType Not Found!');
 
   Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
-  FDictionary.AddOrSetValue(S,Variable);
+  FVariable.AddOrSetValue(S,Variable);
 
   FTokenList.Next;
 
@@ -133,19 +139,19 @@ begin
     begin
       FTokenlist.Next;
 
-      if ValueSynTaxCheck(FTokenList.CurrentToken.Value, Variable.VariableType) then
+      if ValueSyntaxCheck(FTokenList.CurrentToken.Value, Variable.VariableType) then
         Variable.Vaule := FTokenList.CurrentToken.Value;
     end
     else raise Exception.Create('SemiColon Not Found');
   end;
 end;
 
-function TConformity.ValueSynTaxCheck(V: Variant; VariableType: TVariableType): Boolean;
+function TConformity.ValueSyntaxCheck(S: string; VariableType: TVariableType): Boolean;
 begin
   case VariableType of
-    TVariableType.Integer: Result := TRegEx.IsMatch(V,'[a-zA-Z]');
-    TVariableType.string: Result := TRegEx.IsMatch(V,'[0-9]');
-    else raise Exception.Create('Unkwon Variable Types');
+    TVariableType.Integer: Result := TRegEx.IsMatch(S,'[0-9]');
+    TVariableType.string: Result := TRegEx.IsMatch(S,'[a-zA-Z]');
+    else raise Exception.Create('Undefined Type');
   end;
 end;
 
@@ -154,19 +160,28 @@ begin
 
 end;
 
-function TConformity.VariableSynTaxCheck(S: string): Boolean;
+function TConformity.VariableSyntaxCheck(S: string): Boolean;
 begin
   Result := TRegEx.IsMatch(S,'[a-zA-Z]');
 end;
 
+procedure TConformity.Clear;
+var
+  S: string;
+begin
+  for S in FVariable.Keys do
+    FVariable.Items[S].Free;
+end;
+
 constructor TConformity.Create;
 begin
-  FDictionary := TDictionary<string, TVariable>.Create;
+  FVariable := TDictionary<string, TVariableStorage>.Create;
 end;
 
 destructor TConformity.Destroy;
 begin
-  FDictionary.Free;
+  Clear;
+  FVariable.Free;
   inherited;
 end;
 
