@@ -12,7 +12,7 @@ type
     FValue: string;
     FTokenType: TTokenType;
   public
-    constructor Create;
+    constructor Create(Value: string; TokenType: TTokenType);
     destructor Destroy; override;
 
     property Value: string read FValue write FValue;
@@ -27,7 +27,6 @@ implementation
 
 function WhatIsTokenType(Value: string): TTokenType;
 begin
-
   if Value = ' ' then
     Result := TTokenType.Space
   else if Value = ';' then
@@ -50,9 +49,10 @@ begin
     Result := TTokenType.Variable;
 end;
 
-constructor TToken.Create;
+constructor TToken.Create(Value: string; TokenType: TTokenType);
 begin
-
+  FValue := Value;
+  FTokenType := TokenType;
 end;
 
 destructor TToken.Destroy;
