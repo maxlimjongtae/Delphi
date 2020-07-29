@@ -93,53 +93,51 @@ var
   S: string;
   Variable: TVariable;
 begin
+  Result := False;
   S := '';
 
   FTokenList.Next;
 
   if VariableSynTaxCheck(FTokenList.CurrentToken.Value) then
-  begin
+    raise Exception.Create('Variable SynTax Error!');
 
-    if FDictionary.ContainsKey(FTokenList.CurrentToken.Value) then
-      raise Exception.Create('Duplicate Key')
-    else
-    begin
-      Variable := TVariable.Create(FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Value, TVariableType.None);
-      FDictionary.Add(FTokenList.CurrentToken.Value , Variable);
-      S:= FTokenList.CurrentToken.Value;
-    end;
+  if FDictionary.ContainsKey(FTokenList.CurrentToken.Value) then
+    raise Exception.Create('Duplicate Key');
 
-    FTokenList.Next;
+  Variable := TVariable.Create(FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Value, TVariableType.None);
+  FDictionary.Add(FTokenList.CurrentToken.Value , Variable);
+  S:= FTokenList.CurrentToken.Value;
 
-    if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Colon then
-      raise Exception.Create('Error Message');
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Colon then
+    raise Exception.Create('Error Message');
+
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.VariableType then
+    raise Exception.Create('VariableType Not Found!');
+
+  Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
+  FDictionary.AddOrSetValue(S,Variable);
+
+  FTokenList.Next;
+
+  case WhatIsTokenType(FTokenList.CurrentToken.Value) of
+    TTokenType.SemiColon:
     begin
       FTokenList.Next;
+      FCurrentState := BranchState;
+    end;
+    TTokenType.Equal:
+    begin
+      FTokenlist.Next;
 
-      if WhatIsTokenType(FTokenList.CurrentToken.Value) = TTokenType.VariableType then
-      begin
-        Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
-        FDictionary.AddOrSetValue(S,Variable);
-
-        FTokenList.Next;
-
-        if WhatIsTokenType(FTokenList.CurrentToken.Value) = TTokenType.SemiColon then
-        begin
-          FTokenList.Next;
-
-          FCurrentState := BranchState;
-        end
-        else if WhatIsTokenType(FTokenList.CurrentToken.Value) = TTokenType.Equal then
-        begin
-          FTokenlist.Next;
-
-          if ValueSynTaxCheck(FTokenList.CurrentToken.Value, Variable.VariableType) then
-            Variable.Vaule := FTokenList.CurrentToken.Value;
-
-        end else raise Exception.Create('SemiColon Not Found!');
-      end else raise Exception.Create('VariableType Not Found!');
-    end else raise Exception.Create('Colon Not Found!');
-  end else raise Exception.Create('Variable SynTax Error!');
+      if ValueSynTaxCheck(FTokenList.CurrentToken.Value, Variable.VariableType) then
+        Variable.Vaule := FTokenList.CurrentToken.Value;
+    end
+    else raise Exception.Create('SemiColon Not Found');
+  end;
 end;
 
 function TConformity.ValueSynTaxCheck(V: Variant; VariableType: TVariableType): Boolean;

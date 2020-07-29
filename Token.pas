@@ -27,6 +27,7 @@ implementation
 
 function WhatIsTokenType(Value: string): TTokenType;
 begin
+
   if Value = ' ' then
     Result := TTokenType.Space
   else if Value = ';' then
