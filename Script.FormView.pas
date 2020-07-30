@@ -3,9 +3,9 @@ unit Script.FormView;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.RegularExpressions, Tokenize, Token, TokenList, Conformity,
-  Vcl.ExtCtrls;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.RegularExpressions,
+  Tokenize, Token, TokenList, Conformity, Vcl.ExtCtrls;
 
 type
   TScriptView = class(TForm)
@@ -14,18 +14,13 @@ type
     Memo2: TMemo;
     Panel1: TPanel;
     procedure ButtonClick(Sender: TObject);
-    procedure Memo1Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure Memo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
   public
     { Public declarations }
-    procedure Write(S: string); overload;
-    procedure Write(I: Integer); overload;
-    procedure WriteLn(S: string); overload;
-    procedure WriteLn(I: Integer); overload;
-
-    procedure Run(S: string);
+    procedure Run;
   end;
 
 var
@@ -37,14 +32,9 @@ implementation
 
 { TForm1 }
 
-procedure TScriptView.Write(S: string);
-begin
-
-end;
-
 procedure TScriptView.ButtonClick(Sender: TObject);
 begin
-  Run(Memo1.Lines.Text);
+  Run;
 end;
 
 procedure TScriptView.FormCreate(Sender: TObject);
@@ -52,44 +42,34 @@ begin
   ReportMemoryLeaksOnShutdown := True;
 end;
 
-procedure TScriptView.Memo1Change(Sender: TObject);
+procedure TScriptView.Memo1KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
 begin
-  Run(Memo1.Lines.Text);
+ if Key = VK_RETURN then
+   Run;
 end;
 
-procedure TScriptView.Run(S: string);
+procedure TScriptView.Run;
 var
   Tokenize: TTokenize;
+  TokenList: TTokenList;
   Conformity: TConformity;
 begin
-  Memo2.Clear;
+  Memo2.Lines.Clear;
+
   Tokenize := TTokenize.Create;
   try
+    TokenList := Tokenize.Execute(Memo1.Lines.Text);
+    Memo2.Lines.Add(Tokenize.ToString);
     Conformity := TConformity.Create;
     try
-      Memo2.lines.Add(Conformity.Execute(Tokenize.Execute(S)));
-      Memo2.lines.Add(Tokenize.ToString);
+      Memo2.Lines.Add(Conformity.Execute(TokenList));
     finally
       Conformity.Free;
     end;
   finally
     Tokenize.Free;
   end;
-end;
-
-procedure TScriptView.Write(I: Integer);
-begin
-
-end;
-
-procedure TScriptView.WriteLn(S: string);
-begin
-
-end;
-
-procedure TScriptView.WriteLn(I: Integer);
-begin
-
 end;
 
 end.

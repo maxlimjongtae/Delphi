@@ -40,9 +40,22 @@ object ScriptView: TScriptView
       Align = alLeft
       Lines.Strings = (
         'var a: Integer;'
-        'var b: Integer = 10;')
+        'var b: Integer = 10;'
+        'var c: string = '#39'asdfasdf'#39';'
+        'var d: string;'
+        'var e: Integer;'
+        ''
+        'a = 10;'
+        'b = 5;'
+        ''
+        'd = c + '#39'asdf'#39';'
+        'e = a + b;'
+        ''
+        'Write(c);'
+        'Write('#39' = '#39');'
+        'WriteLn('#39#39');')
       TabOrder = 0
-      OnChange = Memo1Change
+      OnKeyDown = Memo1KeyDown
     end
     object Memo2: TMemo
       Left = 231
