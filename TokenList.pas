@@ -22,7 +22,6 @@ type
     function CurrentToken: TToken;
 
     procedure Add(Token: TToken); overload;
-    procedure Add(Value: string; TokenType: TTokenType); overload;
     procedure Delete(Index: Integer);
     procedure Clear;
     procedure Next;
@@ -39,15 +38,9 @@ begin
   FTokenList[High(FTokenList)] := Token;
 end;
 
-procedure TTokenList.Add(Value: string; TokenType: TTokenType);
-begin
-  SetLength(FTokenList, Length(FTokenList) + 1);
-  FTokenList[High(FTokenList)] := TToken.Create(Value, TokenType);
-end;
-
 function TTokenList.CanNext: Boolean;
 begin
-  Result := Length(FTokenList) >= FIndex;
+  Result := Length(FTokenList) > FIndex;
 end;
 
 procedure TTokenList.Clear;
@@ -111,7 +104,9 @@ end;
 procedure TTokenList.Next;
 begin
   if CanNext then
-    Inc(FIndex);
+    Inc(FIndex)
+  else
+    raise Exception.Create('Token Index Out of Range');
 end;
 
 procedure TTokenList.SetItems(index: Integer; const Token: TToken);

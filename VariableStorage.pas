@@ -2,7 +2,8 @@ unit VariableStorage;
 
 interface
 
-uses System.SysUtils, System.TypInfo, System.Classes, System.Variants;
+uses
+  System.SysUtils, System.TypInfo, System.Classes, System.Variants;
 
 type
   {$SCOPEDENUMS ON}
