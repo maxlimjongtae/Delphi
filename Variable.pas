@@ -1,4 +1,4 @@
-unit VariableStorage;
+unit Variable;
 
 interface
 
@@ -10,7 +10,7 @@ type
   TVariableType = (None, Integer, &string);
   {$SCOPEDENUMS OFF}
 
-  TVariableStorage = class
+  TVariable = class
   private
     FValue: Variant;
     FVariableType: TVariableType;
@@ -20,13 +20,24 @@ type
 
     function ToString: string;
 
-    property Vaule: Variant read FValue write FValue;
+    property Value: Variant read FValue write FValue;
     property VariableType: TVariableType read FVariableType write FVariableType;
   end;
 
   function WhatIsVariableType(Value: string): TVariableType;
+  function WhatIsValueType(Value: string): TVariableType;
 
 implementation
+
+function WhatIsValueType(Value: string): TVariableType;
+var
+  I: Integer;
+begin
+  if TryStrToInt(Value,I) then
+    Result := TVariableType.Integer
+  else
+    Result := TVariableType.string;
+end;
 
 function WhatIsVariableType(Value: string): TVariableType;
 begin
@@ -38,18 +49,18 @@ end;
 
 { TVariable }
 
-constructor TVariableStorage.Create(Value: Variant; VariableType: TVariableType);
+constructor TVariable.Create(Value: Variant; VariableType: TVariableType);
 begin
   FValue := Value;
   FVariableType := VariableType;
 end;
 
-destructor TVariableStorage.Destroy;
+destructor TVariable.Destroy;
 begin
   inherited;
 end;
 
-function TVariableStorage.ToString: string;
+function TVariable.ToString: string;
 begin
   Result := '[Value]: ' + VarToStr(FValue) + ' [VariableType]: ' + GetEnumName(Typeinfo(TVariableType),Ord(FVariableType)) ;
 end;

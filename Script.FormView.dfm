@@ -12,13 +12,17 @@ object ScriptView: TScriptView
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  DesignSize = (
+    925
+    849)
   PixelsPerInch = 96
   TextHeight = 13
   object Button: TButton
     Left = 842
-    Top = 782
+    Top = 783
     Width = 75
     Height = 58
+    Anchors = [akRight, akBottom]
     Caption = 'Run'
     TabOrder = 0
     OnClick = ButtonClick
@@ -58,12 +62,15 @@ object ScriptView: TScriptView
       OnKeyDown = Memo1KeyDown
     end
     object Memo2: TMemo
-      Left = 231
+      Left = 225
       Top = 1
-      Width = 693
+      Width = 699
       Height = 775
-      Align = alRight
+      Align = alClient
+      ScrollBars = ssBoth
       TabOrder = 1
+      ExplicitLeft = 231
+      ExplicitWidth = 693
     end
   end
 end

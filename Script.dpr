@@ -7,9 +7,10 @@ uses
   TokenList in 'TokenList.pas',
   Token in 'Token.pas',
   Conformity in 'Conformity.pas',
-  VariableStorage in 'VariableStorage.pas',
+  Variable in 'Variable.pas',
   Method in 'Method.pas',
-  Calculration in 'Calculration.pas';
+  Calculration in 'Calculration.pas',
+  DataStorage in 'DataStorage.pas';
 
 {$R *.res}
 

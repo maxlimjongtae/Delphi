@@ -4,45 +4,42 @@ interface
 
 uses
   System.RegularExpressions, System.SysUtils, System.Classes,
-  System.Generics.Collections, Token, TokenList, VariableStorage;
+  System.Generics.Collections, Token, TokenList, Variable, DataStorage,
+  Vcl.Dialogs;
 
 type
   TState = function: Boolean of object;
 
   TConformity = class
   private
-    FVariable: TDictionary<string, TVariableStorage>;
-
     FCurrentState: TState;
     FTokenList: TTokenList;
 
     function ReservedState: Boolean;
     function VariableState: Boolean;
     function MethodState: Boolean;
+    function ReturnState: Boolean;
 
     function BranchState: Boolean;
     function InitialState: Boolean;
     function FinalState: Boolean;
 
     function VariableSynTaxCheck(S: string): Boolean;
-    function ValueSyntaxCheck(S: string; VariableType: TVariableType): Boolean;
 
-    procedure Clear;
   public
     constructor Create;
     destructor Destroy; override;
 
-    function Execute(TokenList: TTokenList): string;
+    function Execute(TokenList: TTokenList): Boolean;
   end;
 
 implementation
 
 { TConformity }
 
-function TConformity.Execute(TokenList: TTokenList): string;
-var
-  S: string;
+function TConformity.Execute(TokenList: TTokenList): Boolean;
 begin
+  TokenList.First;
   FTokenList := TokenList;
 
   FCurrentState := InitialState;
@@ -51,24 +48,22 @@ begin
     FCurrentState;
   until FCurrentState = FinalState;
 
-  for S in FVariable.Keys do
-    Result := Result + FVariable.Items[S].ToString;
+  FTokenList.First;
+  Result := True;
 end;
 
 function TConformity.BranchState: Boolean;
-var
-  S: string;
 begin
   Result := False;
 
   if FTokenList.CanNext then
   begin
-    S := FTokenList.CurrentToken.Value;
-    case WhatIsTokenType(FTokenList.CurrentToken.Value) of
+    case FTokenList.CurrentToken.TokenType of
       TTokenType.ReservedWord : FCurrentState := ReservedState;
       TTokenType.Variable : FCurrentState := VariableState;
-      TTokenType.Return : FTokenList.Next
-      else {handling exceptions}
+      TTokenType.Method : FCurrentState := MethodState;
+      TTokenType.Return : FCurrentState := ReturnState;
+      else FCurrentState := FinalState;
     end;
   end
   else FCurrentState := FinalState;
@@ -88,76 +83,152 @@ begin
 end;
 
 function TConformity.MethodState: Boolean;
-begin
-
-end;
-
-function TConformity.ReservedState: Boolean;
 var
-  S, S2: string;
-  Variable: TVariableStorage;
+  S: string;
 begin
   Result := False;
-  S := '';
-
   FTokenList.Next;
+  S := FTokenList.CurrentToken.Value;
 
-  S2 := FTokenList.CurrentToken.Value;
-
-  if not VariableSyntaxCheck(FTokenList.CurrentToken.Value) then
-    raise Exception.Create('Variable Syntax Error!');
-
-  if FVariable.ContainsKey(FTokenList.CurrentToken.Value) then
-    raise Exception.Create('Duplicate Key');
-
-  Variable := TVariableStorage.Create('', TVariableType.None);
-  FVariable.Add(FTokenList.CurrentToken.Value , Variable);
-  S:= FTokenList.CurrentToken.Value;
-
-  FTokenList.Next;
-
-  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Colon then
-    raise Exception.Create('Colon Not Found');
-
-  FTokenList.Next;
-
-  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.VariableType then
-    raise Exception.Create('VariableType Not Found!');
-
-  Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
-  FVariable.AddOrSetValue(S,Variable);
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Bracket then
+    raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
 
   FTokenList.Next;
 
   case WhatIsTokenType(FTokenList.CurrentToken.Value) of
-    TTokenType.SemiColon:
+    TTokenType.Variable :
+    begin
+    end;
+    TTokenType.SingleQuote :
     begin
       FTokenList.Next;
-      FCurrentState := BranchState;
+
+      if WhatIsTokenType(FTokenList.CurrentToken.Value) = TTokenType.SingleQuote then
+      begin
+         FTokenList.Next;
+         FCurrentState := BranchState;
+         Exit;
+      end;
+
+      FTokenList.Next;
+
+      if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.SingleQuote then
+        raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
+    end
+    else raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+  end;
+
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Bracket then
+    raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.SemiColon then
+    raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+  FCurrentState := BranchState;
+end;
+
+function TConformity.ReservedState: Boolean;
+var
+  S: string;
+  t: TToken;
+begin
+  Result := False;
+
+  FTokenList.Next;
+
+  if not VariableSyntaxCheck(FTokenList.CurrentToken.Value) then
+    raise Exception.Create(Format('%s is Variable Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Colon then
+    raise Exception.Create(Format('%s is Colon Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.VariableType then
+    raise Exception.Create(Format('%s is VriableType Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+  S := FTokenList.CurrentToken.Value;
+  t := FTokenList.CurrentToken;
+
+  case FTokenList.CurrentToken.TokenType of
+    TTokenType.SemiColon:
+    begin
+
     end;
     TTokenType.Equal:
     begin
       FTokenlist.Next;
 
-      if ValueSyntaxCheck(FTokenList.CurrentToken.Value, Variable.VariableType) then
-        Variable.Vaule := FTokenList.CurrentToken.Value;
+      case FTokenList.CurrentToken.TokenType of
+        TTokenType.SingleQuote :;
+        TTokenType.Value: FTokenList.Next;
+        else
+          raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+      end;
     end
-    else raise Exception.Create('SemiColon Not Found');
+    else
+      raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
   end;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.SemiColon then
+    raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+  FCurrentState := BranchState;
 end;
 
-function TConformity.ValueSyntaxCheck(S: string; VariableType: TVariableType): Boolean;
+function TConformity.ReturnState: Boolean;
 begin
-  case VariableType of
-    TVariableType.Integer: Result := TRegEx.IsMatch(S,'[0-9]');
-    TVariableType.string: Result := TRegEx.IsMatch(S,'[a-zA-Z]');
-    else raise Exception.Create('Undefined Type');
-  end;
+  FTokenList.Next;
+  FCurrentState := BranchState;
 end;
 
 function TConformity.VariableState: Boolean;
 begin
+  Result := False;
 
+  FTokenList.Next;
+
+  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Equal then
+    raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
+
+  FTokenList.Next;
+
+  repeat
+    case WhatIsTokenType(FTokenList.CurrentToken.Value) of
+      TTokenType.SingleQuote :
+      begin
+        FTokenList.Next;
+        FTokenList.Next;
+
+        if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.SingleQuote then
+         raise Exception.Create(Format('SingleQuote Not Found %s',[FTokenList.CurrentToken.GetPosition]));
+      end;
+      TTokenType.Variable:;
+      TTokenType.Value:;
+      TTokenType.Operator:;
+      else
+        raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
+    end;
+
+    FTokenList.Next;
+
+    if FTokenList.CurrentToken.TokenType = TTokenType.Semicolon then
+      Break;
+
+  until not FTokenList.CanNext;
+
+  FTokenList.Next;
+  FCurrentState := BranchState;
 end;
 
 function TConformity.VariableSyntaxCheck(S: string): Boolean;
@@ -165,23 +236,12 @@ begin
   Result := TRegEx.IsMatch(S,'[a-zA-Z]');
 end;
 
-procedure TConformity.Clear;
-var
-  S: string;
-begin
-  for S in FVariable.Keys do
-    FVariable.Items[S].Free;
-end;
-
 constructor TConformity.Create;
 begin
-  FVariable := TDictionary<string, TVariableStorage>.Create;
 end;
 
 destructor TConformity.Destroy;
 begin
-  Clear;
-  FVariable.Free;
   inherited;
 end;
 

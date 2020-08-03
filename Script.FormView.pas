@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.RegularExpressions,
-  Tokenize, Token, TokenList, Conformity, Vcl.ExtCtrls;
+  Tokenize, Token, TokenList, Conformity, Vcl.ExtCtrls, Calculration;
 
 type
   TScriptView = class(TForm)
@@ -54,6 +54,7 @@ var
   Tokenize: TTokenize;
   TokenList: TTokenList;
   Conformity: TConformity;
+  Calculration: TCalculration;
 begin
   Memo2.Lines.Clear;
 
@@ -63,7 +64,13 @@ begin
     Memo2.Lines.Add(Tokenize.ToString);
     Conformity := TConformity.Create;
     try
-      Memo2.Lines.Add(Conformity.Execute(TokenList));
+      Calculration := TCalculration.Create;
+      try
+        if Conformity.Execute(TokenList) then
+           Memo2.Lines.Add(Calculration.Execute(TokenList));
+      finally
+        Calculration.Free;
+      end;
     finally
       Conformity.Free;
     end;

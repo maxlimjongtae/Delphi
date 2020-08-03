@@ -22,12 +22,15 @@ type
     function CurrentToken: TToken;
 
     procedure Add(Token: TToken); overload;
-    procedure Delete(Index: Integer);
+    procedure Delete(index: Integer);
     procedure Clear;
     procedure Next;
+    procedure First;
 
-    property Items[index : Integer] : TToken read GetItmes write SetItems;
+    property Items[index: Integer]: TToken read GetItmes write SetItems;
+    property Index: Integer write FIndex;
   end;
+
 implementation
 
 { TTokenList }
@@ -72,7 +75,7 @@ begin
     raise Exception.Create('Token not found!');
 end;
 
-procedure TTokenList.Delete(Index: Integer);
+procedure TTokenList.Delete(index: Integer);
 var
   I: Integer;
 begin
@@ -91,6 +94,11 @@ destructor TTokenList.Destroy;
 begin
   Clear;
   inherited;
+end;
+
+procedure TTokenList.First;
+begin
+  FIndex := 0;
 end;
 
 function TTokenList.GetItmes(index: Integer): TToken;
