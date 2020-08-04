@@ -43,6 +43,7 @@ implementation
 function TCalculration.BranchState: Boolean;
 begin
   Result := False;
+
   if FTokenList.CanNext then
   begin
     case WhatIsTokenType(FTokenList.CurrentToken.Value) of
@@ -53,7 +54,8 @@ begin
       else FCurrentState := FinalState;
     end;
   end
-  else FCurrentState := FinalState;
+  else
+    FCurrentState := FinalState;
 end;
 
 constructor TCalculration.Create;
@@ -72,6 +74,7 @@ end;
 
 function TCalculration.Execute(TokenList : TTokenList): string;
 begin
+  TokenList.First;
   FTokenList := TokenList;
 
   FCurrentState := InitialState;
@@ -98,7 +101,7 @@ end;
 
 function TCalculration.MethodState: Boolean;
 var
-  CurrentValue, Values: string;
+  CurrentValue, Values, s: string;
   Variable: TVariable;
   Method: TMethod;
 begin
@@ -114,6 +117,11 @@ begin
     begin
       Variable := FDataStorage.Items[FTokenList.CurrentToken.Value];
       Values := Variable.Value;
+    end;
+    TTokenType.SingleQuote :
+    begin
+      FTokenList.Next;
+      Values := Values + FTokenList.CurrentToken.Value;
     end;
     TTokenType.Value:
     begin
@@ -137,6 +145,8 @@ begin
   end;
 
   FTokenList.Next;
+  FTokenList.Next;
+  S := FTokenList.CurrentToken.Value;
   FCurrentState := BranchState;
 end;
 
@@ -149,6 +159,7 @@ begin
   S := '';
 
   FTokenList.Next;
+  FTokenList.Next;
 
   if FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
     raise Exception.Create(Format('%s is Duplicate Variable! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
@@ -159,6 +170,7 @@ begin
 
   FTokenList.Next;
   FTokenList.Next;
+  FTokenList.Next;
 
   Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
   FDataStorage.AddOrSetValue(S,Variable);
@@ -167,12 +179,25 @@ begin
 
   case FTokenList.CurrentToken.TokenType of
     TTokenType.SemiColon:;
-    TTokenType.Equal:
+    TTokenType.Space:
     begin
-      FTokenlist.Next;
+      FTokenList.Next;
+      FTokenList.Next;
+      FTokenList.Next;
+
       case FTokenList.CurrentToken.TokenType of
         TTokenType.SingleQuote :
         begin
+          FTokenList.Next;
+
+          if Variable.VariableType <>  WhatIsValueType(FTokenList.CurrentToken.Value) then
+            raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
+
+          Variable.Value := FTokenList.CurrentToken.Value;
+          FDataStorage.AddOrSetValue(S,Variable);
+
+          FTokenList.Next;
+          FTokenList.Next;
         end;
         TTokenType.Value:
         begin
@@ -230,6 +255,8 @@ begin
 
   FTokenList.Next;
   FTokenList.Next;
+  FTokenList.Next;
+  FTokenList.Next;
 
   repeat
     case FTokenList.CurrentToken.TokenType of
@@ -249,10 +276,24 @@ begin
         end;
 
       end;
+      TTokenType.SingleQuote :
+      begin
+        FTokenList.Next;
+
+        if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
+          raise Exception.Create(Format('%s is MissMatch VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
+        case TargetVariable.VariableType of
+          TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
+          TVariableType.string: V := V + FTokenList.CurrentToken.Value;
+        end;
+
+        FTokenList.Next;
+      end;
       TTokenType.Value:
       begin
         if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
-          raise Exception.Create(Format('%s is diffrent VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+          raise Exception.Create(Format('%s is MissMatch VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
 
         case TargetVariable.VariableType of
           TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
@@ -275,6 +316,8 @@ begin
       FDataStorage.AddOrSetValue(CurrentTokenValue, TargetVariable);
       Break;
     end;
+
+    FTokenList.Next;
 
   until not FTokenList.CanNext;
 

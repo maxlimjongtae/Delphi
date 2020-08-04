@@ -3,7 +3,7 @@ unit Tokenize;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.TypInfo, Token, TokenList;
+  System.SysUtils, System.Classes, System.TypInfo, Token, TokenList, Variable;
 
 type
   TState = function: Boolean of object;
@@ -196,27 +196,21 @@ function TTokenize.SingleQuoteState: Boolean;
 begin
   Result := False;
 
-  while CanNext do
-  begin
-    Next;
+  FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.SingleQuote, FLine, FPos));
+  Next;
 
-    if WhatIsTokenType(CurrentValue) = TTokenType.Return then
-    begin
-      FCurrentState := ReturnState;
-      Exit;
-    end;
-
-    // return, semicolon
+  repeat
     if WhatIsTokenType(CurrentValue) = TTokenType.SingleQuote then
-    begin
-      FTokenList.Next;
       Break;
-    end;
 
     FTemporaryValue := FTemporaryValue + CurrentValue;
-  end;
+    Next;
+  until WhatIsTokenType(CurrentValue) = TTokenType.Return;
+
 
   FTokenList.Add(TToken.Create(FTemporaryValue , TTokenType.Value, FLine, FPos-1));
+  FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.SingleQuote, FLine, FPos));
+
   FTemporaryValue := '';
 
   Next;
@@ -232,6 +226,8 @@ begin
     FTokenList.Add(TToken.Create(FTemporaryValue , WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
     FTemporaryValue := '';
   end;
+
+  FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Space, FLine, FPos));
 
   Next;
   FCurrentState := BranchState;
@@ -281,7 +277,7 @@ end;
 
 function TTokenize.Execute(Value: string): TTokenList;
 begin
-  FValue := Value;
+  FValue := Value + #13#10;
 
   FCurrentState := InitialState;
 

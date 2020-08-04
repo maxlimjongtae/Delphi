@@ -3,7 +3,7 @@ unit Token;
 interface
 
 uses
-  System.SysUtils, System.RegularExpressions;
+  System.SysUtils, System.RegularExpressions, Variable;
 
 type
   {$SCOPEDENUMS ON}
@@ -16,13 +16,13 @@ type
     FValue: string;
     FTokenType: TTokenType;
   public
-    constructor Create(Value: string; TokenType: TTokenType; Line, Pos: Integer);
+    constructor Create(Value: string; TokenType: TTokenType; Line, Pos: Integer); overload;
     destructor Destroy; override;
 
     function GetPosition: string;
 
-    property Value: string read FValue write FValue;
-    property TokenType: TTokenType read FTokenType write FTokenType;
+    property Value: string read FValue;
+    property TokenType: TTokenType read FTokenType;
   end;
 
   function WhatIsTokenType(Value: string): TTokenType;
