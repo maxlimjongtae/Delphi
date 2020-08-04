@@ -44,10 +44,6 @@ type
     function ToString: string;
     procedure Next;
     procedure NextLine;
-
-//    property TokenList: TTokenList read FTokenlist;
-//    property Value: string write FValue;
-//    property Index: Integer read FValueIndex;
   end;
 
 implementation
@@ -108,12 +104,9 @@ begin
 end;
 
 function TTokenize.BranchState: Boolean;
-var
-  S: string;
 begin
   Result := False;
 
-  S := CurrentValue;
   if CanNext then
   begin
     case WhatIsTokenType(CurrentValue) of

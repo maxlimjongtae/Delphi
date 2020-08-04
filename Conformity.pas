@@ -27,28 +27,24 @@ type
     function VariableSynTaxCheck(S: string): Boolean;
 
   public
-    constructor Create;
+    constructor Create(TokenList: TTokenList);
     destructor Destroy; override;
 
-    function Execute(TokenList: TTokenList): Boolean;
+    function Execute: Boolean;
   end;
 
 implementation
 
 { TConformity }
 
-function TConformity.Execute(TokenList: TTokenList): Boolean;
+function TConformity.Execute: Boolean;
 begin
-  TokenList.First;
-  FTokenList := TokenList;
-
   FCurrentState := InitialState;
 
   repeat
     FCurrentState;
   until FCurrentState = FinalState;
 
-  FTokenList.First;
   Result := True;
 end;
 
@@ -134,9 +130,6 @@ begin
 end;
 
 function TConformity.ReservedState: Boolean;
-var
-  S: string;
-  t: TToken;
 begin
   Result := False;
 
@@ -156,8 +149,6 @@ begin
     raise Exception.Create(Format('%s is VriableType Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
 
   FTokenList.Next;
-  S := FTokenList.CurrentToken.Value;
-  t := FTokenList.CurrentToken;
 
   case FTokenList.CurrentToken.TokenType of
     TTokenType.SemiColon:
@@ -179,7 +170,7 @@ begin
       raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
   end;
 
-  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.SemiColon then
+  if FTokenList.CurrentToken.TokenType <> TTokenType.SemiColon then
     raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
 
   FTokenList.Next;
@@ -236,8 +227,10 @@ begin
   Result := TRegEx.IsMatch(S,'[a-zA-Z]');
 end;
 
-constructor TConformity.Create;
+constructor TConformity.Create(TokenList: TTokenList);
 begin
+  TokenList.First;
+  FTokenList := TokenList;
 end;
 
 destructor TConformity.Destroy;

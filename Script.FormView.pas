@@ -61,7 +61,7 @@ begin
   Tokenize := TTokenize.Create;
   try
     TokenList := Tokenize.Execute(Memo1.Lines.Text);
-    Memo2.Lines.Add(Tokenize.ToString);
+//    Memo2.Lines.Add(Tokenize.ToString);
     Conformity := TConformity.Create;
     try
       Calculration := TCalculration.Create;

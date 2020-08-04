@@ -142,7 +142,7 @@ end;
 
 function TCalculration.ReservedState: Boolean;
 var
-  S, s1: string;
+  S: string;
   Variable: TVariable;
 begin
   Result := False;
@@ -166,29 +166,13 @@ begin
   FTokenList.Next;
 
   case FTokenList.CurrentToken.TokenType of
-    TTokenType.SemiColon:
-    begin
-
-    end;
+    TTokenType.SemiColon:;
     TTokenType.Equal:
     begin
       FTokenlist.Next;
-      s1 := FTokenList.CurrentToken.Value;
-
-//      WhatIsTokenType(FTokenList.CurrentToken.Value)
       case FTokenList.CurrentToken.TokenType of
         TTokenType.SingleQuote :
         begin
-//          FTokenList.Next;
-//
-//          if Variable.VariableType <> TVariableType.string then
-//            raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
-//
-//          Variable.Value := FTokenList.CurrentToken.Value;
-//          FDataStorage.AddOrSetValue(S,Variable);
-//
-//          FTokenList.Next;
-//          FTokenList.Next;
         end;
         TTokenType.Value:
         begin
@@ -232,7 +216,7 @@ end;
 function TCalculration.VariableState: Boolean;
 var
   TargetVariable, CurrentVariable : TVariable;
-  CurrentTokenValue, S: string;
+  CurrentTokenValue: string;
   V: Variant;
 begin
   Result := False;
@@ -260,20 +244,19 @@ begin
           raise Exception.Create(Format('%s is VariableType Missmatch %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
 
         case TargetVariable.VariableType of
-          TVariableType.Integer: V := StrToInt(VarToStr(V)) + StrToInt(CurrentVariable.Value);
-          TVariableType.string: V := VarToStr(V) + CurrentVariable.Value;
+          TVariableType.Integer: V := V + StrToInt(CurrentVariable.Value);
+          TVariableType.string: V := V + CurrentVariable.Value;
         end;
 
       end;
       TTokenType.Value:
       begin
-        S := FTokenList.CurrentToken.Value;
         if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
           raise Exception.Create(Format('%s is diffrent VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
 
         case TargetVariable.VariableType of
-          TVariableType.Integer: V := StrToInt(VarToStr(V)) + StrToInt(FTokenList.CurrentToken.Value);
-          TVariableType.string: V := VarToStr(V) + FTokenList.CurrentToken.Value;
+          TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
+          TVariableType.string: V := V + FTokenList.CurrentToken.Value;
         end;
       end;
       TTokenType.Operator:
