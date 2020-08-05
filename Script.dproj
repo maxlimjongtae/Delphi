@@ -109,7 +109,6 @@
         <DCCReference Include="Variable.pas"/>
         <DCCReference Include="Method.pas"/>
         <DCCReference Include="Calculration.pas"/>
-        <DCCReference Include="DataStorage.pas"/>
         <DCCReference Include="Scripter.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

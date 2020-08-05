@@ -10,7 +10,6 @@ uses
   Variable in 'Variable.pas',
   Method in 'Method.pas',
   Calculration in 'Calculration.pas',
-  DataStorage in 'DataStorage.pas',
   Scripter in 'Scripter.pas';
 
 {$R *.res}

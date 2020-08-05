@@ -4,7 +4,7 @@ interface
 
 uses
   System.RegularExpressions, System.SysUtils, System.Classes,
-  System.Generics.Collections, Token, TokenList, Variable, DataStorage,
+  System.Generics.Collections, Token, TokenList, Variable,
   Vcl.Dialogs;
 
 type

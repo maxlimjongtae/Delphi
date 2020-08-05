@@ -4,7 +4,7 @@ interface
 
 uses
   System.RegularExpressions, System.SysUtils, System.Classes,
-  System.Generics.Collections, Tokenize, Token, TokenList, Variable, DataStorage,
+  System.Generics.Collections, Tokenize, Token, TokenList, Variable,
   System.Variants, Method;
 
 type
