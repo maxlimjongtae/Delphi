@@ -56,10 +56,49 @@ var
   InputText: string;
 begin
 
-//  InputText := 'var a: Integer;';
-//
-//  Memo1.Clear;
-//  Memo1.Lines.Add(InputText);
+  InputText :=
+  'var a: Integer;' + #13#10 +
+//  'vara: Integer;' + #13#10 +
+//  'var a:Integer;' + #13#10 +
+//  'vara:Integer;' + #13#10 +
+  'var abcde: Integer;' + #13#10 +
+//  'var a10: Integer;' + #13#10 +
+//  'var a10z: Integer;' + #13#10 +
+  'var b: Integer = 12;' + #13#10 +
+//  'var a: Integer = 10 ;' + #13#10 +
+//  'var a: Integer =10;' + #13#10 +
+//  'var a: Integer=10;' + #13#10 +
+  'var c: string = ''15'';' + #13#10 +
+//  'var a: Integer= ''10'';' + #13#10 +
+//  'var a: Integer=''10'';' + #13#10 +
+//  'var a: Integer = ''10'' ;' + #13#10 +
+
+  'a = ''1'';' + #13#10 +
+//  'a =''1'';' + #13#10 +
+//  'a=''1'';' + #13#10 +
+//  'a= ''1'';' + #13#10 +
+//  'a = ''1'' ;' + #13#10 +
+  'a = 1;' + #13#10 +
+//  'a=1;' + #13#10 +
+//  'a =1;' + #13#10 +
+//  'a =1 ;' + #13#10 +
+//  'a = 1 ;' + #13#10 +
+  'a = b;' + #13#10 +
+//  'a=b;' + #13#10 +
+//  'a=b ;' + #13#10 +
+//  'a = b ;' + #13#10 +
+//  'a= b ;' + #13#10
+
+//  'WriteLn(A);' + #13#10 +
+  'WriteLn(a);' + #13#10 +
+  'WriteLn(''1'');' + #13#10 +
+  'WriteLn(1);' + #13#10 +
+  'WriteLn(b);' + #13#10 +
+  'WriteLn(b);' + #13#10
+  ;
+
+  Memo1.Clear;
+  Memo1.Lines.Add(InputText);
 
   Memo2.Clear;
   Scripter := TScripter.Create;

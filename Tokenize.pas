@@ -246,7 +246,7 @@ begin
     if FTokenList.Items[I].TokenType = TTokenType.Return then
       S := S + #13#10
     else
-      S := S + format('%s (%s) %s ' ,
+      S := S + format('%s [%s] %s ' ,
       [FTokenList.Items[I].Value,
       GetEnumName(Typeinfo(TTokenType),Ord(FTokenList.Items[I].TokenType)),
       FTokenList.Items[I].GetPosition ]);
@@ -258,6 +258,12 @@ end;
 function TTokenize.EqualState: Boolean;
 begin
   Result := False;
+
+  if FTemporaryValue <> EmptyStr then
+  begin
+    FTokenList.Add(TToken.Create(FTemporaryValue , WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
+    FTemporaryValue := '';
+  end;
 
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Equal, FLine, FPos));
 

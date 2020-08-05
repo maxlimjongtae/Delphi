@@ -51,7 +51,7 @@ begin
     Result := TTokenType.Return
   else if (Value = '+') or (Value = '-') or (Value = '*') or (Value = '/') then
     Result := TTokenType.Operator
-  else if (TRegEx.IsMatch(Value,'^[0-9]')) or (TRegEx.IsMatch(Value,'^''x''')) then
+  else if (TRegEx.IsMatch(Value,'^[0-9]+$')) or (TRegEx.IsMatch(Value,'^[a-zA-Z]+$')) then
     Result := TTokenType.Value
   else if (Value = 'Write') or (Value = 'WriteLn') then
     Result := TTokenType.Method

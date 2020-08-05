@@ -186,6 +186,9 @@ begin
         begin
           FTokenList.Next;
 
+          if WhatIsVariableType(Token.Value) <> TVariableType.string then
+            raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+
           if FTokenList.CurrentToken.TokenType <> TTokenType.Value then
             raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
 
@@ -198,6 +201,10 @@ begin
         end;
         TTokenType.Value:
         begin
+
+          if WhatIsVariableType(Token.Value) <> TVariableType.Integer then
+            raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+
           FTokenList.Next;
         end
         else
@@ -246,7 +253,6 @@ begin
   FTokenList.Next;
 
   repeat
-
     case FTokenList.CurrentToken.TokenType of
       TTokenType.SingleQuote :
       begin
@@ -281,7 +287,7 @@ end;
 
 function TConformity.VariableSyntaxCheck(S: string): Boolean;
 begin
-  Result := TRegEx.IsMatch(S,'[a-zA-Z]');
+  Result := TRegEx.IsMatch(S,'^[a-zA-Z]+$');
 end;
 
 constructor TConformity.Create;

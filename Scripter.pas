@@ -41,7 +41,7 @@ function TScripter.Execute(Value: string): string;
 begin
   FTokenList := FTokenize.Execute(Value);
 
-//  Result := FTokenize.ToString + #13#10;
+  Result := FTokenize.ToString + #13#10;
 
   if not FConformity.Execute(FTokenList) then
     raise Exception.Create('Error Message');

@@ -101,13 +101,13 @@ end;
 
 function TCalculration.MethodState: Boolean;
 var
-  CurrentValue, Values, s: string;
+  MethodName, Values: string;
   Variable: TVariable;
   Method: TMethod;
 begin
   Result := False;
 
-  CurrentValue := FTokenList.CurrentToken.Value;
+  MethodName := FTokenList.CurrentToken.Value;
 
   FTokenList.Next;
   FTokenList.Next;
@@ -115,6 +115,10 @@ begin
   case FTokenList.CurrentToken.TokenType of
     TTokenType.Variable :
     begin
+
+      if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
+        raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+
       Variable := FDataStorage.Items[FTokenList.CurrentToken.Value];
       Values := Variable.Value;
     end;
@@ -135,7 +139,7 @@ begin
 
   Method := TMethod.Create;
   try
-    case WhatIsMethodType(CurrentValue) of
+    case WhatIsMethodType(MethodName) of
       TMethodType.Write: FResult := FResult + Method.Write(Values);
       TMethodType.WriteLn: FResult := FResult + Method.WriteLn(Values);
       else raise Exception.Create(Format('%s is Undefined Method! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
@@ -146,7 +150,6 @@ begin
 
   FTokenList.Next;
   FTokenList.Next;
-  S := FTokenList.CurrentToken.Value;
   FCurrentState := BranchState;
 end;
 
@@ -190,7 +193,7 @@ begin
         begin
           FTokenList.Next;
 
-          if Variable.VariableType <>  WhatIsValueType(FTokenList.CurrentToken.Value) then
+          if Variable.VariableType <>  TVariableType.string then
             raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
 
           Variable.Value := FTokenList.CurrentToken.Value;
@@ -201,7 +204,7 @@ begin
         end;
         TTokenType.Value:
         begin
-          if Variable.VariableType <>  WhatIsValueType(FTokenList.CurrentToken.Value) then
+          if Variable.VariableType <>  TVariableType.Integer then
             raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
 
           Variable.Value := FTokenList.CurrentToken.Value;
