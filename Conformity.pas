@@ -15,17 +15,19 @@ type
     FCurrentState: TState;
     FTokenList: TTokenList;
 
-    function ReservedState: Boolean;
-    function VariableState: Boolean;
-    function MethodState: Boolean;
+    function StringState: Boolean;
     function ReturnState: Boolean;
+    function ReservedWordState: Boolean;
+    function MethodState: Boolean;
+    function VariableState: Boolean;
 
     function BranchState: Boolean;
     function InitialState: Boolean;
     function FinalState: Boolean;
 
     function VariableSynTaxCheck(S: string): Boolean;
-
+    function CurrentTokenValue: string;
+    function CurrentTokenType: TTokenType;
   public
     constructor Create;
     destructor Destroy; override;
@@ -55,18 +57,18 @@ function TConformity.BranchState: Boolean;
 begin
   Result := False;
 
-  if FTokenList.CanNext then
-  begin
-    case FTokenList.CurrentToken.TokenType of
-      TTokenType.ReservedWord : FCurrentState := ReservedState;
-      TTokenType.Variable : FCurrentState := VariableState;
-      TTokenType.Method : FCurrentState := MethodState;
-      TTokenType.Return : FCurrentState := ReturnState;
-      else FCurrentState := FinalState;
-    end;
-  end
-  else
-    FCurrentState := FinalState;
+  case FTokenList.CurrentToken.TokenType of
+    TTokenType.String:
+      FCurrentState := StringState;
+
+    TTokenType.Return:
+      FCurrentState := ReturnState;
+
+    TTokenType.TheEnd:
+      FCurrentState := FinalState;
+
+    else FCurrentState := FinalState;
+  end;
 end;
 
 function TConformity.FinalState: Boolean;
@@ -83,101 +85,94 @@ begin
 end;
 
 function TConformity.MethodState: Boolean;
-var
-  S: string;
 begin
-  Result := False;
   FTokenList.Next;
-  S := FTokenList.CurrentToken.Value;
 
-  if WhatIsTokenType(FTokenList.CurrentToken.Value) <> TTokenType.Bracket then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+  if FTokenList.CurrentToken.TokenType <> TTokenType.LeftBracket then
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   case FTokenList.CurrentToken.TokenType of
-    TTokenType.Variable, TTokenType.Value :
+    TTokenType.String:
     begin
     end;
-    TTokenType.SingleQuote :
+    TTokenType.SingleQuote:
     begin
       FTokenList.Next;
 
-      if FTokenList.CurrentToken.TokenType = TTokenType.SingleQuote then
+      if FTokenList.CurrentToken.TokenType = TTokenType.String then
       begin
-         FTokenList.Next;
-         FCurrentState := BranchState;
-         Exit;
-      end;
+        FTokenList.Next;
 
-      FTokenList.Next;
-
-      if FTokenList.CurrentToken.TokenType <> TTokenType.SingleQuote then
-        raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+        if FTokenList.CurrentToken.TokenType <> TTokenType.SingleQuote then
+          raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+      end
+      else if FTokenList.CurrentToken.TokenType = TTokenType.SingleQuote then
+      else
+        raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
     end
-    else raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    else raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
   end;
 
   FTokenList.Next;
 
-  if FTokenList.CurrentToken.TokenType <> TTokenType.Bracket then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+  if FTokenList.CurrentToken.TokenType <> TTokenType.RightBracket then
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.SemiColon then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
   FCurrentState := BranchState;
 end;
 
-function TConformity.ReservedState: Boolean;
-var
-  Token: TToken;
+function TConformity.ReservedWordState: Boolean;
 begin
-  Result := False;
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
-  if not VariableSyntaxCheck(FTokenList.CurrentToken.Value) then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+  if FTokenList.CurrentToken.TokenType <> TTokenType.String then
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.Colon then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
-  if FTokenList.CurrentToken.TokenType <> TTokenType.VariableType then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
-
-  Token := FTokenList.CurrentToken;
+  if FTokenList.CurrentToken.TokenType <> TTokenType.String then
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   case FTokenList.CurrentToken.TokenType of
+    TTokenType.SemiColon:
+    begin
+    end;
     TTokenType.Space:
     begin
       FTokenList.Next;
 
       if FTokenList.CurrentToken.TokenType <> TTokenType.Equal then
-        raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+        raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
       FTokenList.Next;
 
       if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
-        raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+        raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
       FTokenList.Next;
 
@@ -186,43 +181,46 @@ begin
         begin
           FTokenList.Next;
 
-          if WhatIsVariableType(Token.Value) <> TVariableType.string then
-            raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
-
-          if FTokenList.CurrentToken.TokenType <> TTokenType.Value then
-            raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+          if FTokenList.CurrentToken.TokenType <> TTokenType.String then
+            raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
           FTokenList.Next;
 
           if FTokenList.CurrentToken.TokenType <> TTokenType.SingleQuote then
-            raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+            raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
           FTokenList.Next;
         end;
-        TTokenType.Value:
+        TTokenType.Numeric, TTokenType.String:
         begin
-
-          if WhatIsVariableType(Token.Value) <> TVariableType.Integer then
-            raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
-
           FTokenList.Next;
         end
         else
-          raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+          raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
       end;
-    end;
-    TTokenType.SemiColon:
-    begin
     end
     else
-      raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+      raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
   end;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.SemiColon then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
   FCurrentState := BranchState;
+end;
+
+function TConformity.StringState: Boolean;
+begin
+  case WhatIsTokenKeyword(CurrentTokenValue) of
+    TTokenKeyword.var:
+      FCurrentState := ReservedWordState;
+
+    TTokenKeyword.Write, TTokenKeyword.WriteLn:
+      FCurrentState := MethodState;
+
+    else FCurrentState := VariableState;
+  end;
 end;
 
 function TConformity.ReturnState: Boolean;
@@ -233,52 +231,71 @@ end;
 
 function TConformity.VariableState: Boolean;
 begin
-  Result := False;
+  if FTokenList.CurrentToken.TokenType <> TTokenType.String then
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.Equal then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
-    raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+    raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
 
   FTokenList.Next;
 
   repeat
     case FTokenList.CurrentToken.TokenType of
-      TTokenType.SingleQuote :
+      TTokenType.String, TTokenType.Numeric:
+      begin
+      end;
+      TTokenType.SingleQuote:
       begin
         FTokenList.Next;
+
+        if FTokenList.CurrentToken.TokenType <> TTokenType.String then
+          raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+
         FTokenList.Next;
 
         if FTokenList.CurrentToken.TokenType <> TTokenType.SingleQuote then
-          raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
-      end;
-      TTokenType.Variable, TTokenType.Value, TTokenType.Operator:
-      begin
-      end;
+          raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+      end
       else
-        raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+        raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
     end;
 
     FTokenList.Next;
 
-    if FTokenList.CurrentToken.TokenType = TTokenType.Semicolon then
-      Break;
+    case FTokenList.CurrentToken.TokenType of
+      TTokenType.SemiColon:
+      begin
+        Break;
+      end;
+      TTokenType.Space:
+      begin
+        FTokenList.Next;
 
-    if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
-      raise Exception.Create(Format('%s Syntax Error!',[FTokenList.CurrentToken.GetPosition]));
+        if FTokenList.CurrentToken.TokenType <> TTokenType.Operator then
+          raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+
+        FTokenList.Next;
+
+        if FTokenList.CurrentToken.TokenType <> TTokenType.Space then
+          raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+      end
+      else
+        raise Exception.Create(Format('%s Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+    end;
 
     FTokenList.Next;
-
   until not FTokenList.CanNext;
 
   FTokenList.Next;
@@ -293,6 +310,16 @@ end;
 constructor TConformity.Create;
 begin
 
+end;
+
+function TConformity.CurrentTokenType: TTokenType;
+begin
+  Result := FTokenList.CurrentToken.TokenType;
+end;
+
+function TConformity.CurrentTokenValue: string;
+begin
+  Result := FTokenList.CurrentToken.Value;
 end;
 
 destructor TConformity.Destroy;

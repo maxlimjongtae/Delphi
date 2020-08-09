@@ -41,12 +41,12 @@ function TScripter.Execute(Value: string): string;
 begin
   FTokenList := FTokenize.Execute(Value);
 
-  Result := FTokenize.ToString + #13#10;
+  Result := FTokenize.ToString + sLineBreak;
 
   if not FConformity.Execute(FTokenList) then
-    raise Exception.Create('Error Message');
-
-  Result := Result + FCalculration.Execute(FTokenList);
+//    raise Exception.Create('Error Message');
+//
+//  Result := Result + FCalculration.Execute(FTokenList);
 end;
 
 end.

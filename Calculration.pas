@@ -33,7 +33,7 @@ type
     procedure VariableClear;
     function ToString: string;
 
-    function Execute(TokenList : TTokenList): string;
+    function Execute(TokenList: TTokenList): string;
   end;
 
 implementation
@@ -41,15 +41,18 @@ implementation
 { TCalculration }
 
 function TCalculration.BranchState: Boolean;
+var
+  S: string;
 begin
   Result := False;
 
+  S := FTokenList.CurrentToken.Value;
   if FTokenList.CanNext then
   begin
-    case WhatIsTokenType(FTokenList.CurrentToken.Value) of
-      TTokenType.ReservedWord : FCurrentState := ReservedState;
-      TTokenType.Variable : FCurrentState := VariableState;
-      TTokenType.Method : FCurrentState := MethodState;
+    case FTokenList.CurrentToken.TokenType of
+//      TTokenType.ReservedWord : FCurrentState := ReservedState;
+//      TTokenType.Variable : FCurrentState := VariableState;
+//      TTokenType.Method : FCurrentState := MethodState;
       TTokenType.Return : FCurrentState := ReturnState;
       else FCurrentState := FinalState;
     end;
@@ -112,27 +115,27 @@ begin
   FTokenList.Next;
   FTokenList.Next;
 
-  case FTokenList.CurrentToken.TokenType of
-    TTokenType.Variable :
-    begin
-
-      if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
-        raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-      Variable := FDataStorage.Items[FTokenList.CurrentToken.Value];
-      Values := Variable.Value;
-    end;
-    TTokenType.SingleQuote :
-    begin
-      FTokenList.Next;
-      Values := Values + FTokenList.CurrentToken.Value;
-    end;
-    TTokenType.Value:
-    begin
-      Values := Values + FTokenList.CurrentToken.Value;
-    end
-    else raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-  end;
+//  case FTokenList.CurrentToken.TokenType of
+//    TTokenType.Variable :
+//    begin
+//
+//      if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
+//        raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//      Variable := FDataStorage.Items[FTokenList.CurrentToken.Value];
+//      Values := Variable.Value;
+//    end;
+//    TTokenType.SingleQuote :
+//    begin
+//      FTokenList.Next;
+//      Values := Values + FTokenList.CurrentToken.Value;
+//    end;
+//    TTokenType.Value:
+//    begin
+//      Values := Values + FTokenList.CurrentToken.Value;
+//    end
+//    else raise Exception.Create(Format('%s is Syntax Error! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//  end;
 
   FTokenList.Next;
   FTokenList.Next;
@@ -142,7 +145,7 @@ begin
     case WhatIsMethodType(MethodName) of
       TMethodType.Write: FResult := FResult + Method.Write(Values);
       TMethodType.WriteLn: FResult := FResult + Method.WriteLn(Values);
-      else raise Exception.Create(Format('%s is Undefined Method! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
+      else raise Exception.Create(Format('%s is Undefined Method! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
     end;
   finally
     Method.Free;
@@ -158,69 +161,69 @@ var
   S: string;
   Variable: TVariable;
 begin
-  Result := False;
-  S := '';
-
-  FTokenList.Next;
-  FTokenList.Next;
-
-  if FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
-    raise Exception.Create(Format('%s is Duplicate Variable! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-  S := FTokenList.CurrentToken.Value;
-  Variable := TVariable.Create('', TVariableType.None);
-  FDataStorage.Add(S, Variable);
-
-  FTokenList.Next;
-  FTokenList.Next;
-  FTokenList.Next;
-
-  Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
-  FDataStorage.AddOrSetValue(S,Variable);
-
-  FTokenList.Next;
-
-  case FTokenList.CurrentToken.TokenType of
-    TTokenType.SemiColon:;
-    TTokenType.Space:
-    begin
-      FTokenList.Next;
-      FTokenList.Next;
-      FTokenList.Next;
-
-      case FTokenList.CurrentToken.TokenType of
-        TTokenType.SingleQuote :
-        begin
-          FTokenList.Next;
-
-          if Variable.VariableType <>  TVariableType.string then
-            raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
-
-          Variable.Value := FTokenList.CurrentToken.Value;
-          FDataStorage.AddOrSetValue(S,Variable);
-
-          FTokenList.Next;
-          FTokenList.Next;
-        end;
-        TTokenType.Value:
-        begin
-          if Variable.VariableType <>  TVariableType.Integer then
-            raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
-
-          Variable.Value := FTokenList.CurrentToken.Value;
-          FDataStorage.AddOrSetValue(S,Variable);
-          FTokenList.Next;
-        end
-        else
-          raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
-      end;
-    end
-    else
-      raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
-  end;
-
-  FTokenList.Next;
-  FCurrentState := BranchState;
+//  Result := False;
+//  S := '';
+//
+//  FTokenList.Next;
+//  FTokenList.Next;
+//
+//  if FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
+//    raise Exception.Create(Format('%s is Duplicate Variable! %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//  S := FTokenList.CurrentToken.Value;
+//  Variable := TVariable.Create('', TVariableType.None);
+//  FDataStorage.Add(S, Variable);
+//
+//  FTokenList.Next;
+//  FTokenList.Next;
+//  FTokenList.Next;
+//
+//  Variable.VariableType := WhatIsVariableType(FTokenList.CurrentToken.Value);
+//  FDataStorage.AddOrSetValue(S,Variable);
+//
+//  FTokenList.Next;
+//
+//  case FTokenList.CurrentToken.TokenType of
+//    TTokenType.SemiColon:;
+//    TTokenType.Space:
+//    begin
+//      FTokenList.Next;
+//      FTokenList.Next;
+//      FTokenList.Next;
+//
+//      case FTokenList.CurrentToken.TokenType of
+//        TTokenType.SingleQuote :
+//        begin
+//          FTokenList.Next;
+//
+//          if Variable.VariableType <>  TVariableType.string then
+//            raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
+//
+//          Variable.Value := FTokenList.CurrentToken.Value;
+//          FDataStorage.AddOrSetValue(S,Variable);
+//
+//          FTokenList.Next;
+//          FTokenList.Next;
+//        end;
+//        TTokenType.Value:
+//        begin
+//          if Variable.VariableType <>  TVariableType.Integer then
+//            raise Exception.Create(Format('%s is MissMatch Type',[FTokenList.CurrentToken.Value]));
+//
+//          Variable.Value := FTokenList.CurrentToken.Value;
+//          FDataStorage.AddOrSetValue(S,Variable);
+//          FTokenList.Next;
+//        end
+//        else
+//          raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.Caret]));
+//      end;
+//    end
+//    else
+//      raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.Caret]));
+//  end;
+//
+//  FTokenList.Next;
+//  FCurrentState := BranchState;
 end;
 
 function TCalculration.ReturnState: Boolean;
@@ -247,85 +250,85 @@ var
   CurrentTokenValue: string;
   V: Variant;
 begin
-  Result := False;
-  CurrentTokenValue := FTokenList.CurrentToken.Value;
-  VarClear(V);
-
-  if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
-    raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-  TargetVariable := FDataStorage.Items[FTokenList.CurrentToken.Value];
-
-  FTokenList.Next;
-  FTokenList.Next;
-  FTokenList.Next;
-  FTokenList.Next;
-
-  repeat
-    case FTokenList.CurrentToken.TokenType of
-      TTokenType.Variable:
-      begin
-        if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
-          raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-        CurrentVariable := FDataStorage.Items[FTokenList.CurrentToken.Value];
-
-        if CurrentVariable.VariableType <> TargetVariable.VariableType then
-          raise Exception.Create(Format('%s is VariableType Missmatch %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-        case TargetVariable.VariableType of
-          TVariableType.Integer: V := V + StrToInt(CurrentVariable.Value);
-          TVariableType.string: V := V + CurrentVariable.Value;
-        end;
-
-      end;
-      TTokenType.SingleQuote :
-      begin
-        FTokenList.Next;
-
-        if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
-          raise Exception.Create(Format('%s is MissMatch VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-        case TargetVariable.VariableType of
-          TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
-          TVariableType.string: V := V + FTokenList.CurrentToken.Value;
-        end;
-
-        FTokenList.Next;
-      end;
-      TTokenType.Value:
-      begin
-        if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
-          raise Exception.Create(Format('%s is MissMatch VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.GetPosition]));
-
-        case TargetVariable.VariableType of
-          TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
-          TVariableType.string: V := V + FTokenList.CurrentToken.Value;
-        end;
-      end;
-      TTokenType.Operator:
-      begin
-
-      end;
-      else
-        raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.GetPosition]));
-    end;
-
-    FTokenList.Next;
-
-    if FTokenList.CurrentToken.TokenType = TTokenType.Semicolon then
-    begin
-      TargetVariable.Value := V;
-      FDataStorage.AddOrSetValue(CurrentTokenValue, TargetVariable);
-      Break;
-    end;
-
-    FTokenList.Next;
-
-  until not FTokenList.CanNext;
-
-  FTokenList.Next;
-  FCurrentState := BranchState;
+//  Result := False;
+//  CurrentTokenValue := FTokenList.CurrentToken.Value;
+//  VarClear(V);
+//
+//  if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
+//    raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//  TargetVariable := FDataStorage.Items[FTokenList.CurrentToken.Value];
+//
+//  FTokenList.Next;
+//  FTokenList.Next;
+//  FTokenList.Next;
+//  FTokenList.Next;
+//
+//  repeat
+//    case FTokenList.CurrentToken.TokenType of
+//      TTokenType.Variable:
+//      begin
+//        if not FDataStorage.ContainsKey(FTokenList.CurrentToken.Value) then
+//          raise Exception.Create(Format('%s is Undefined Variable %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//        CurrentVariable := FDataStorage.Items[FTokenList.CurrentToken.Value];
+//
+//        if CurrentVariable.VariableType <> TargetVariable.VariableType then
+//          raise Exception.Create(Format('%s is VariableType Missmatch %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//        case TargetVariable.VariableType of
+//          TVariableType.Integer: V := V + StrToInt(CurrentVariable.Value);
+//          TVariableType.string: V := V + CurrentVariable.Value;
+//        end;
+//
+//      end;
+//      TTokenType.SingleQuote :
+//      begin
+//        FTokenList.Next;
+//
+//        if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
+//          raise Exception.Create(Format('%s is MissMatch VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//        case TargetVariable.VariableType of
+//          TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
+//          TVariableType.string: V := V + FTokenList.CurrentToken.Value;
+//        end;
+//
+//        FTokenList.Next;
+//      end;
+//      TTokenType.Value:
+//      begin
+//        if TargetVariable.VariableType <> WhatIsValueType(FTokenList.CurrentToken.Value) then
+//          raise Exception.Create(Format('%s is MissMatch VariableType %s',[FTokenList.CurrentToken.Value, FTokenList.CurrentToken.Caret]));
+//
+//        case TargetVariable.VariableType of
+//          TVariableType.Integer: V := V + StrToInt(FTokenList.CurrentToken.Value);
+//          TVariableType.string: V := V + FTokenList.CurrentToken.Value;
+//        end;
+//      end;
+//      TTokenType.Operator:
+//      begin
+//
+//      end;
+//      else
+//        raise Exception.Create(Format('Syntax Error! %s',[FTokenList.CurrentToken.Caret]));
+//    end;
+//
+//    FTokenList.Next;
+//
+//    if FTokenList.CurrentToken.TokenType = TTokenType.Semicolon then
+//    begin
+//      TargetVariable.Value := V;
+//      FDataStorage.AddOrSetValue(CurrentTokenValue, TargetVariable);
+//      Break;
+//    end;
+//
+//    FTokenList.Next;
+//
+//  until not FTokenList.CanNext;
+//
+//  FTokenList.Next;
+//  FCurrentState := BranchState;
 end;
 
 end.

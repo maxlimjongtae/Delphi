@@ -72,7 +72,7 @@ begin
   if FTokenList[FIndex] <> nil then
     Result := FTokenList[FIndex]
   else
-    raise Exception.Create('Token not found!');
+    raise Exception.Create(format('%s Token not found!',[FTokenList[FIndex -2].Value]));
 end;
 
 procedure TTokenList.Delete(index: Integer);

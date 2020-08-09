@@ -9,15 +9,15 @@ type
   TState = function: Boolean of object;
 
   TTokenize = class
+  const
+    START_INDEX = 1;
   private
     FTokenList: TTokenList;
 
     FLine, FPos: Integer;
     FValueIndex: Integer;
     FValue: string;
-    FTemporaryValue: string;
     FCurrentState: TState;
-
 
     function SemiColonState: Boolean;
     function ColonState: Boolean;
@@ -25,9 +25,12 @@ type
     function EqualState: Boolean;
     function OperatorState: Boolean;
     function ReturnState: Boolean;
-    function UndefinedState: Boolean;
     function SingleQuoteState: Boolean;
-    function BracketState: Boolean;
+    function StringState: Boolean;
+    function NumericState: Boolean;
+    function LeftBracketState: Boolean;
+    function RightBracketState: Boolean;
+    function UndefinedState: Boolean;
 
     function InitialState: Boolean;
     function BranchState: Boolean;
@@ -54,12 +57,6 @@ function TTokenize.ColonState: Boolean;
 begin
   Result := False;
 
-  if FTemporaryValue <> EmptyStr then
-  begin
-    FTokenList.Add(TToken.Create(FTemporaryValue ,TTokenType.Variable, FLine, FPos-1));
-    FTemporaryValue := '';
-  end;
-
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Colon, FLine, FPos));
 
   Next;
@@ -70,10 +67,9 @@ constructor TTokenize.Create;
 begin
   FTokenList := TTokenList.Create;
   FValue := '';
-  FTemporaryValue := '';
-  FValueIndex := 1;
-  FLine := 1;
-  FPos := 1;
+  FValueIndex := START_INDEX;
+  FLine := START_INDEX;
+  FPos := START_INDEX;
 end;
 
 function TTokenize.CurrentValue: String;
@@ -87,19 +83,13 @@ begin
   inherited;
 end;
 
-function TTokenize.BracketState: Boolean;
+function TTokenize.LeftBracketState: Boolean;
 begin
   Result := False;
 
-  if FTemporaryValue <> EmptyStr then
-  begin
-    FTokenList.Add(TToken.Create(FTemporaryValue , WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
-    FTemporaryValue := '';
-  end;
-
-  FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Bracket, FLine, FPos));
-
+  FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.LeftBracket, FLine, FPos));
   Next;
+
   FCurrentState := BranchState;
 end;
 
@@ -107,22 +97,45 @@ function TTokenize.BranchState: Boolean;
 begin
   Result := False;
 
-  if CanNext then
-  begin
-    case WhatIsTokenType(CurrentValue) of
-      TTokenType.SemiColon: FCurrentState := SemiColonState;
-      TTokenType.Colon: FCurrentState := ColonState;
-      TTokenType.Space: FCurrentState := SpaceState;
-      TTokenType.Equal: FCurrentState := EqualState;
-      TTokenType.Operator: FCurrentState := OperatorState;
-      TTokenType.Return : FCurrentState := ReturnState;
-      TTokenType.SingleQuote : FCurrentState := SingleQuoteState;
-      TTokenType.Bracket : FCurrentState := BracketState;
-      else FCurrentState := UndefinedState;
-    end;
-  end
-  else
-    FCurrentState := FinalState;
+  case WhatIsTokenType(CurrentValue) of
+    TTokenType.SemiColon:
+      FCurrentState := SemiColonState;
+
+    TTokenType.Colon:
+      FCurrentState := ColonState;
+
+    TTokenType.Space:
+      FCurrentState := SpaceState;
+
+    TTokenType.Equal:
+      FCurrentState := EqualState;
+
+    TTokenType.Return:
+      FCurrentState := ReturnState;
+
+    TTokenType.SingleQuote:
+      FCurrentState := SingleQuoteState;
+
+    TTokenType.LeftBracket:
+      FCurrentState := LeftBracketState;
+
+    TTokenType.RightBracket:
+      FCurrentState := RightBracketState;
+
+    TTokenType.Operator:
+      FCurrentState := OperatorState;
+
+    TTokenType.String:
+      FCurrentState := StringState;
+
+    TTokenType.Numeric:
+      FCurrentState := NumericState;
+
+    TTokenType.TheEnd:
+      FCurrentState := FinalState;
+
+    else FCurrentState := UndefinedState;
+  end;
 end;
 
 function TTokenize.CanNext: Boolean;
@@ -149,6 +162,25 @@ begin
   FPos := 1;
 end;
 
+function TTokenize.NumericState: Boolean;
+var
+  S: string;
+begin
+  Result := False;
+  S := '';
+
+  While WhatIsTokenType(CurrentValue) = TTokenType.Numeric do
+  begin
+    S := S + CurrentValue;
+    Next;
+  end;
+
+  if not S.IsEmpty then
+    FTokenList.Add(TToken.Create(S, TTokenType.Numeric, FLine, FPos - 1));
+
+  FCurrentState := BranchState;
+end;
+
 function TTokenize.OperatorState: Boolean;
 begin
   Result := False;
@@ -163,12 +195,6 @@ function TTokenize.ReturnState: Boolean;
 begin
   Result := False;
 
-  if FTemporaryValue <> EmptyStr then
-  begin
-    FTokenList.Add(TToken.Create(FTemporaryValue , WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
-    FTemporaryValue := '';
-  end;
-
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Return, FLine, FPos));
 
   Next;
@@ -176,15 +202,19 @@ begin
   FCurrentState := BranchState;
 end;
 
-function TTokenize.SemiColonState: Boolean;
+function TTokenize.RightBracketState: Boolean;
 begin
   Result := False;
 
-  if FTemporaryValue <> EmptyStr then
-  begin
-    FTokenList.Add(TToken.Create(FTemporaryValue, WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
-    FTemporaryValue := '';
-  end;
+  FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.RightBracket, FLine, FPos));
+
+  Next;
+  FCurrentState := BranchState;
+end;
+
+function TTokenize.SemiColonState: Boolean;
+begin
+  Result := False;
 
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.SemiColon, FLine, FPos));
 
@@ -193,25 +223,24 @@ begin
 end;
 
 function TTokenize.SingleQuoteState: Boolean;
+var
+  S: string;
 begin
   Result := False;
-
+  S := '';
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.SingleQuote, FLine, FPos));
   Next;
 
-  repeat
-    if WhatIsTokenType(CurrentValue) = TTokenType.SingleQuote then
-      Break;
-
-    FTemporaryValue := FTemporaryValue + CurrentValue;
+  While WhatIsTokenType(CurrentValue) <> TTokenType.SingleQuote do
+  begin
+    S := S + CurrentValue;
     Next;
-  until WhatIsTokenType(CurrentValue) = TTokenType.Return;
+  end;
 
+  if not S.IsEmpty then
+    FTokenList.Add(TToken.Create(S, TTokenType.String, FLine, FPos - 1));
 
-  FTokenList.Add(TToken.Create(FTemporaryValue , TTokenType.Value, FLine, FPos-1));
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.SingleQuote, FLine, FPos));
-
-  FTemporaryValue := '';
 
   Next;
   FCurrentState := BranchState;
@@ -221,15 +250,28 @@ function TTokenize.SpaceState: Boolean;
 begin
   Result := False;
 
-  if FTemporaryValue <> EmptyStr then
-  begin
-    FTokenList.Add(TToken.Create(FTemporaryValue , WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
-    FTemporaryValue := '';
-  end;
-
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Space, FLine, FPos));
 
   Next;
+  FCurrentState := BranchState;
+end;
+
+function TTokenize.StringState: Boolean;
+var
+  S: string;
+begin
+  Result := False;
+  S := '';
+
+  While WhatIsTokenType(CurrentValue) = TTokenType.String do
+  begin
+    S := S + CurrentValue;
+    Next;
+  end;
+
+  if not S.IsEmpty then
+    FTokenList.Add(TToken.Create(S, TTokenType.String, FLine, FPos - 1));
+
   FCurrentState := BranchState;
 end;
 
@@ -246,10 +288,9 @@ begin
     if FTokenList.Items[I].TokenType = TTokenType.Return then
       S := S + #13#10
     else
-      S := S + format('%s [%s] %s ' ,
+      S := S + format('%s [%s]' ,
       [FTokenList.Items[I].Value,
-      GetEnumName(Typeinfo(TTokenType),Ord(FTokenList.Items[I].TokenType)),
-      FTokenList.Items[I].GetPosition ]);
+      GetEnumName(Typeinfo(TTokenType),Ord(FTokenList.Items[I].TokenType)) ]);
   end;
 
   Result := S;
@@ -259,12 +300,6 @@ function TTokenize.EqualState: Boolean;
 begin
   Result := False;
 
-  if FTemporaryValue <> EmptyStr then
-  begin
-    FTokenList.Add(TToken.Create(FTemporaryValue , WhatIsTokenType(FTemporaryValue), FLine, FPos-1));
-    FTemporaryValue := '';
-  end;
-
   FTokenList.Add(TToken.Create(CurrentValue ,TTokenType.Equal, FLine, FPos));
 
   Next;
@@ -273,17 +308,12 @@ end;
 
 function TTokenize.UndefinedState: Boolean;
 begin
-  Result := False;
-
-  FTemporaryValue := FTemporaryValue + CurrentValue;
-
-  Next;
-  FCurrentState := BranchState;
+  raise Exception.Create(Format('%s is Undefined Value!',[CurrentValue]));
 end;
 
 function TTokenize.Execute(Value: string): TTokenList;
 begin
-  FValue := Value + #13#10;
+  FValue := Value;
 
   FCurrentState := InitialState;
 
@@ -291,6 +321,7 @@ begin
     FCurrentState;
   until FCurrentState = FinalState;
 
+  FTokenList.Add(TToken.Create(#0, TTokenType.TheEnd, FLine, FPos));
   Result := FTokenList;
 end;
 

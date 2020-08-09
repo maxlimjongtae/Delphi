@@ -69,8 +69,6 @@ object ScriptView: TScriptView
       Align = alClient
       ScrollBars = ssBoth
       TabOrder = 1
-      ExplicitLeft = 231
-      ExplicitWidth = 693
     end
   end
 end
